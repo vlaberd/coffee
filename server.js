@@ -1,33 +1,46 @@
 const express = require('express');
-const app = express();
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
+const app = express();
 
-// Настройка базы данных
 const DB_FILE = path.join(__dirname, 'db.json');
+
+// Улучшенная инициализация базы
 if (!fs.existsSync(DB_FILE)) {
-  fs.writeFileSync(DB_FILE, '{}');
+  fs.writeFileSync(DB_FILE, '{}', 'utf-8');
+  console.log('База данных создана');
+} else {
+  console.log('Существующая база:', fs.readFileSync(DB_FILE, 'utf-8'));
 }
 
-// Middleware
 app.use(express.json());
 app.use(express.static('public'));
 
-// API endpoints
+// Фиксированный обработчик сохранения
 app.post('/save', (req, res) => {
-  fs.writeFileSync(DB_FILE, JSON.stringify(req.body));
-  res.sendStatus(200);
+  try {
+    if (!req.body) throw new Error('Нет данных');
+    
+    fs.writeFileSync(DB_FILE, JSON.stringify(req.body, null, 2), 'utf-8');
+    console.log('Сохранено:', req.body);
+    res.status(200).json({success: true});
+  } catch (error) {
+    console.error('Ошибка сохранения:', error);
+    res.status(500).json({error: error.message});
+  }
 });
 
+// Фиксированный обработчик загрузки
 app.get('/load', (req, res) => {
-  const data = fs.readFileSync(DB_FILE, 'utf-8');
-  res.json(JSON.parse(data || '{}'));
-});
-
-// Serve index.html for all routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  try {
+    const data = fs.readFileSync(DB_FILE, 'utf-8') || '{}';
+    console.log('Загружено:', data);
+    res.json(JSON.parse(data));
+  } catch (error) {
+    console.error('Ошибка загрузки:', error);
+    res.status(500).json({error: error.message});
+  }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Сервер запущен на ${PORT}`));

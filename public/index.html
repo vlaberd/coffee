@@ -270,144 +270,128 @@
             {name: "SUNDAY", address: "Москва, Авиаторов 1"},
             {name: "BOVE", address: "Москва, Академика Сахарова 7"},
             {name: "SRETENKA", address: "Москва, ул. Сретенка 27с1"},
-            {name: "NEO", address: "Москва, Стремянный переулок 2"}
-        ];
+            {name: "NEO", address: "Москва, Стремянный переулок 2"},
+            {name: "BLESS", address: "Москва,  ул. Олонецкая 6"}
+          ];
 
-        const streetList = document.getElementById('streetList');
-        const checkedCount = document.getElementById('checkedCount');
-        const totalCount = document.getElementById('totalCount');
-        const searchInput = document.getElementById('searchInput');
-        const noResults = document.getElementById('noResults');
+          let savedChecks = {};
+          let searchTimeout;
+          let saveTimeout;
 
-        // Генерируем список кофеен
-        function renderList(filter = '') {
+          // DOM элементы
+          const streetList = document.getElementById('streetList');
+          const checkedCount = document.getElementById('checkedCount');
+          const totalCount = document.getElementById('totalCount');
+          const searchInput = document.getElementById('searchInput');
+          const noResults = document.getElementById('noResults');
+
+          // Загрузка сохраненных данных
+          async function loadChecks() {
+            try {
+              const response = await fetch('/load');
+              savedChecks = await response.json() || {};
+              console.log('Загружены отметки:', savedChecks);
+            } catch (error) {
+              console.error('Ошибка загрузки:', error);
+            }
+          }
+
+          // Сохранение данных (с дебаунсом)
+          async function saveChecks() {
+            try {
+              await fetch('/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(savedChecks)
+              });
+              console.log('Сохранено:', savedChecks);
+            } catch (error) {
+              console.error('Ошибка сохранения:', error);
+            }
+          }
+
+          // Обновление состояния чекбокса
+          function updateCheckboxState(id, checked) {
+            savedChecks[id] = checked;
+            updateCounter();
+
+            // Оптимизированное сохранение (раз в секунду)
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveChecks, 1000);
+          }
+
+          // Обновление счетчика
+          function updateCounter() {
+            const checkedItems = Object.values(savedChecks).filter(Boolean).length;
+            checkedCount.textContent = checkedItems;
+          }
+
+          // Рендер списка с фильтрацией
+          function renderList(filter = '') {
             streetList.innerHTML = '';
             let visibleCount = 0;
-            
+
             streets.forEach(street => {
-                const fullName = `${street.name} X SURF COFFEE®`;
-                const searchString = `${fullName} ${street.address}`.toLowerCase();
-                
-                if (filter && !searchString.includes(filter.toLowerCase())) {
-                    return;
-                }
-                
-                visibleCount++;
-                
-                const li = document.createElement('li');
-                li.className = 'street-item';
-                
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = street.name;
-                checkbox.addEventListener('change', updateSummary);
-                
-                const label = document.createElement('label');
-                label.htmlFor = street.name;
-                label.innerHTML = `
-                    <span class="coffee-icon">☕</span>
-                    <div>
-                        <div class="street-name">${street.name} X SURF COFFEE<sup>®</sup></div>
-                        <div class="street-address">${street.address}</div>
-                    </div>
-                `;
-                
-                li.appendChild(checkbox);
-                li.appendChild(label);
-                streetList.appendChild(li);
-            });
-            
-            // Показываем сообщение, если ничего не найдено
-            noResults.style.display = visibleCount === 0 ? 'block' : 'none';
-            totalCount.textContent = streets.length;
-            updateSummary();
-        }
+              const displayName = `${street.name} X SURF COFFEE®`;
+              const searchContent = `${displayName} ${street.address}`.toLowerCase();
 
-        // Обновляем статистику
-        function updateSummary() {
-            const checkedItems = document.querySelectorAll('.street-item input:checked');
-            checkedCount.textContent = checkedItems.length;
-            
-            document.querySelectorAll('.street-item').forEach(item => {
-                item.classList.toggle('checked', item.querySelector('input').checked);
-            });
-        }
-
-        // Поиск при вводе текста
-        searchInput.addEventListener('input', (e) => {
-            renderList(e.target.value);
-        });
-
-        // Инициализация
-        renderList();
-              // ===== [1] Загрузка отметок с сервера =====
-        async function loadChecks() {
-          try {
-            const response = await fetch('/load');
-            const checks = await response.json();
-
-            Object.keys(checks).forEach(id => {
-              const checkbox = document.getElementById(id);
-              if (checkbox) {
-                checkbox.checked = checks[id];
-                if (checks[id]) {
-                  checkbox.closest('.street-item').classList.add('checked');
-                }
+              if (filter && !searchContent.includes(filter.toLowerCase())) {
+                return;
               }
+
+              visibleCount++;
+
+              const li = document.createElement('li');
+              li.className = 'street-item';
+
+              const checkbox = document.createElement('input');
+              checkbox.type = 'checkbox';
+              checkbox.id = street.name;
+              checkbox.checked = savedChecks[street.name] || false;
+              checkbox.addEventListener('change', () => {
+                updateCheckboxState(street.name, checkbox.checked);
+                li.classList.toggle('checked', checkbox.checked);
+              });
+
+              const label = document.createElement('label');
+              label.htmlFor = street.name;
+              label.innerHTML = `
+                <span class="coffee-icon">☕</span>
+                <div>
+                  <div class="street-name">${street.name} X SURF COFFEE<sup>®</sup></div>
+                  <div class="street-address">${street.address}</div>
+                </div>
+              `;
+
+              li.appendChild(checkbox);
+              li.appendChild(label);
+
+              if (checkbox.checked) {
+                li.classList.add('checked');
+              }
+
+              streetList.appendChild(li);
             });
+
+            noResults.style.display = visibleCount === 0 ? 'block' : 'none';
             updateCounter();
-          } catch (error) {
-            console.error("Ошибка загрузки:", error);
           }
-        }
 
-        // ===== [2] Сохранение отметок на сервер =====
-        async function saveChecks() {
-          const checkboxes = document.querySelectorAll('.street-item input');
-          const checks = {};
-
-          checkboxes.forEach(checkbox => {
-            checks[checkbox.id] = checkbox.checked;
+          // Поиск с дебаунсом
+          searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+              renderList(e.target.value);
+            }, 300);
           });
 
-          try {
-            await fetch('/save', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(checks)
-            });
-          } catch (error) {
-            console.error("Ошибка сохранения:", error);
-          }
-        }
-
-        // ===== [3] Обновлённый счётчик =====
-        function updateCounter() {
-          const checkedItems = document.querySelectorAll('.street-item input:checked');
-          checkedCount.textContent = checkedItems.length;
-        }
-
-        // ===== [4] Обновлённая функция отметки =====
-        function updateSummary() {
-          document.querySelectorAll('.street-item').forEach(item => {
-            const isChecked = item.querySelector('input').checked;
-            item.classList.toggle('checked', isChecked);
+          // Инициализация
+          document.addEventListener('DOMContentLoaded', async () => {
+            await loadChecks();
+            renderList();
+            totalCount.textContent = streets.length;
           });
-          updateCounter();
-          saveChecks(); // Автосохранение при изменении
-        }
 
-        // ===== [5] Инициализация =====
-        document.addEventListener('DOMContentLoaded', () => {
-          // Вызывайте renderList() как обычно, затем:
-          loadChecks();
-
-          // Обновите обработчики чекбоксов
-          document.querySelectorAll('.street-item input').forEach(checkbox => {
-            checkbox.addEventListener('change', updateSummary);
-          });
-        });
-          
-    </script>
-</body>
-</html>
+              </script>
+          </body>
+          </html>
