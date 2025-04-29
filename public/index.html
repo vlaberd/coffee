@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surf Coffee's - Список кофеен</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: #000;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .logo span {
+            font-size: 24px;
+            vertical-align: super;
+        }
+        .slogan {
+            font-size: 14px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+        .search-container {
+            margin-bottom: 25px;
+        }
+        #searchInput {
+            width: 100%;
+            padding: 12px 20px;
+            border: 1px solid #000;
+            border-radius: 0;
+            font-size: 16px;
+            box-sizing: border-box;
+            background-color: #fff;
+        }
+        #searchInput:focus {
+            outline: none;
+            background-color: #f5f5f5;
+        }
+        .street-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .street-item {
+            padding: 15px 20px;
+            margin: 10px 0;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        .street-item.hidden {
+            display: none;
+        }
+        .street-item:hover {
+            border-color: #000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .street-item input {
+            margin-right: 15px;
+            transform: scale(1.3);
+            accent-color: #000;
+        }
+        .street-item.checked {
+            background-color: #f0f0f0;
+            position: relative;
+        }
+        .street-item.checked::after {
+            content: "✓";
+            position: absolute;
+            right: 20px;
+            color: #000;
+            font-weight: bold;
+        }
+        .street-name {
+            font-weight: bold;
+        }
+        .street-address {
+            color: #666;
+            font-size: 14px;
+            margin-top: 3px;
+        }
+        .summary {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #000;
+            color: #fff;
+            text-align: center;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-style: italic;
+            display: none;
+            border: 1px dashed #ddd;
+        }
+        .coffee-icon {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .trademark {
+            font-size: 10px;
+            vertical-align: super;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">SURF COFFEE<span>®</span></div>
+        <div class="slogan">список кофеен</div>
+    </div>
+    
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Найти кофейню...">
+    </div>
+    
+    <div class="no-results" id="noResults">Кофейня с таким названием не найдена</div>
+    
+    <ul class="street-list" id="streetList">
+        <!-- Список будет сгенерирован JavaScript -->
+    </ul>
+    
+    <div class="summary">
+        <p>ОТМЕЧЕНО: <span id="checkedCount">0</span> ИЗ <span id="totalCount">0</span></p>
+    </div>
+
+    <div class="footer">
+        © SURF COFFEE x KK VB 2025
+    </div>
+
+    <script>
+        // Список кофеен Surf Coffee
+        const streets = [
+            {name: "SOLYANKA", address: "Москва, м. Китай-Город, ул. Солянка 1/2"},
+            {name: "ARBAT", address: "Москва, м. Арбатская, ул. Новый Арбат 7а"},
+            {name: "SECRET SPOT", address: "Москва, м. Шаболовская, ул. Конный переулок д.12"},
+            {name: "LIPS", address: "Москва, м. Академическая, ул. Дмитрия Ульянова 4к1"},
+            {name: "G-SPOT", address: "Москва, м. Тургеневская, ул. Мясницкая 16"},
+            {name: "MAYAK", address: "Москва, м. Маяковская, ул. Тверская 25/12"},
+            {name: "SHORE", address: "Москва, м. Мякинино, МКАД 66 километр, Крокус Сити Молл"},
+            {name: "DREAM", address: "Москва, ул. Новослободская, 16а"},
+            {name: "ANTHILL", address: "Москва, Пресненская наб. 12"},
+            {name: "CHANGE", address: "Москва, Стремянный пер. 38"},
+            {name: "PKRVK", address: "Москва, ул. Покровка, 31, стр. 1"},
+            {name: "TAKEOFF", address: "Москва, пр. Аэропорта, 8, стр. 9"},
+            {name: "SPORT", address: "Москва, Усачёва ул., 62"},
+            {name: "URBAN JUNGLE", address: "Москва, Долгоруковская 5"},
+            {name: "BELKA", address: "Москва, ул. Бутырский Вал д.4"},
+            {name: "REVOLUTION", address: "Москва, Красная Пресня 30с1"},
+            {name: "RED VILLAGE", address: "Москва, ул.Нижняя Красносельская, д.35 с49"},
+            {name: "TRAVEL", address: "г. Балашиха, мкр Железнодорожный, ул Андрея Белого 1"},
+            {name: "FLAT", address: "Москва, ул. Маршала Бирюзова, 18"},
+            {name: "STUDIO", address: "Москва, Садовническая ул., 42, стр. 1"},
+            {name: "AMEN", address: "Москва, Аминьевское шоссе дом 6"},
+            {name: "SHINE", address: "Москва, Новоясеневский проспект 11, ТРК Форт, 1 этаж"},
+            {name: "FLACON", address: "Москва, Большая Новодмитровская 36 с 8"},
+            {name: "EAST WEST", address: "Москва, Усачёва, 3"},
+            {name: "HIGHWAY", address: "Ленинградский проспект, 66"},
+            {name: "REPUBLIC", address: "ул. 1-ая Тверская-Ямская, 10"},
+            {name: "AVIAPARK", address: "г. Москва, Ходынский бул., 4, ТЦ Авиапарк, этаж 3"},
+            {name: "SABABA", address: "г. Москва, Пятницкий переулок, 3, м. Новокузнецкая"},
+            {name: "AKADEMIK", address: "г. Москва, проспект Вернадского, 41"},
+            {name: "OASIS", address: "Москва, Орликов переулок, 8"},
+            {name: "PI", address: "Москва, Остоженка 3/14"},
+            {name: "LOVELY", address: "Проспект Мира, дом 40"},
+            {name: "FLOW", address: "г. Москва, Страстной бул. 6"},
+            {name: "YOUTH", address: "Москва, yлица Маршала Сергеева, д 3."},
+            {name: "ARMA", address: "Москва, Нижний Сусальный переулок 5"},
+            {name: "PURE", address: "Москва, Измайловский пр-д 5А"},
+            {name: "OGNI", address: "Москва, ул. Лобачевского 124 к1"},
+            {name: "STARTUP", address: "Москва, РП Новоивановское Ул. Западная, 181. МЦД Сколково ТЦ Орбион"},
+            {name: "LE FORT", address: "Москва, Красноказарменная улица 14А к5"},
+            {name: "WINGS", address: "Москва, Осенний Бульвар 10 корпус 1"},
+            {name: "BONNIE", address: "Москва, Большая Почтовая улица, 28к3"},
+            {name: "MOON", address: "Москва, пр. Андропова, 27"},
+            {name: "ARTS", address: "Москва, Ул. Архитектора Щусева, 2к1"},
+            {name: "LUCKY", address: "Москва, Бауманская улица 33/2 стр. 1"},
+            {name: "KING", address: "Москва, ул. Ленинградский пр-т 29к2"},
+            {name: "LINE UP", address: "Москва, ул. Покровка, 4"},
+            {name: "SEASONS", address: "Москва, ул. Охотный ряд, 2"},
+            {name: "YELLOW", address: "Вешки, Заводская 16, пом. 3"},
+            {name: "BAIKONUR", address: "Москва, Декабристов 17"},
+            {name: "STITCH", address: "Москва, Рочдельская 15, стр. 35"},
+            {name: "BRAVE", address: "Москва, бульвар Генерала Карбышева, 11"},
+            {name: "OTTO", address: "Москва, Куусинена 7К2"},
+            {name: "HOMIE", address: "Москва, Проспект Мира 99"},
+            {name: "SUPEROCEAN", address: "Москва, Складочная 1, стр. 38"},
+            {name: "UMKA", address: "Москва, Холодильный пер. 3 к1 с1"},
+            {name: "VDNX", address: "Москва, 2я Останкинская 3"},
+            {name: "BOTANICA", address: "Москва, 1-я улица Леонова, 18"},
+            {name: "TEMPLE", address: "Москва, Ленинградский пр-т 36 стр. 38"},
+            {name: "BOAT", address: "Москва, Корабельная улица 3А"},
+            {name: "GRAND", address: "Москва, Гжатская 5к8"},
+            {name: "TAG", address: "Москва, Верхняя Радищевская 13с1"},
+            {name: "SWALLOW", address: "Москва, Ленинградское ш. 16Ас8"},
+            {name: "DISCOVERY", address: "Москва, улица Дыбенко, 7/1"},
+            {name: "RAIL", address: "Москва, Кожевническая ул. 1с1"},
+            {name: "SEVER", address: "Москва, Дмитровское ш. 107А к1"},
+            {name: "SALARIS", address: "Москва, Киевское ш., 23-й км., 1"},
+            {name: "TGL", address: "Москва, Тагильская ул. 4а"},
+            {name: "TECH", address: "Москва, пр. Андропова 10"},
+            {name: "JAZZ", address: "Москва, ул. Сущевский Вал 49 с2"},
+            {name: "CHERRY", address: "Москва, Новочеремушкинская 17"},
+            {name: "AMUR", address: "Москва, Амурская 1А, к5"},
+            {name: "GRAIN", address: "Москва, Шелепихинская набережная 34к2"},
+            {name: "SATURN", address: "Москва, 2-й Грайвороновский пр-д 44к3"},
+            {name: "ALAIA", address: "Москва, Вавилова 4"},
+            {name: "VAL D’ISERE", address: "Москва, Тверская 4"},
+            {name: "NEGLINKA", address: "Москва, Неглинная 14с1А"},
+            {name: "BLUE SKY", address: "Москва, Волоколамское шоссе 71к1"},
+            {name: "TWIN FIN", address: "Москва, Миклухо-Маклая 43"},
+            {name: "IQ", address: "Москва, Пресненская набережная 10с2"},
+            {name: "LILO", address: "Москва, Ленинская слобода 26"},
+            {name: "YACHT", address: "Москва, Ленинградское ш. 69к2"},
+            {name: "LA VIDA", address: "Москва, 1-й Котляковский п-к, 2Ак2"},
+            {name: "FILM", address: "Москва, Новый Арбат 24"},
+            {name: "OVERHEAD", address: "Москва, Волгоградский пр-т 32/5к1"},
+            {name: "RAMENKI", address: "Москва, Винницкая улица 8к4"},
+            {name: "NIKOLA", address: "Москва, Никольская 10/2с2Б"},
+            {name: "UNION", address: "Москва, Русаковская 22"},
+            {name: "SMILE", address: "Москва, Смоленская площадь 5"},
+            {name: "PICTURE DISC", address: "Москва, Авиаконструктора миля 3А"},
+            {name: "HAPPINESS", address: "Москва, Дубининская улица 59А"},
+            {name: "OSTANKINO", address: "Москва, Огородный проезд 16/1с3"},
+            {name: "BAZE", address: "Москва, Ленинградский просп. 75к1"},
+            {name: "STRANA", address: "Москва, Зубовский бульвар 25к1"},
+            {name: "CAVE", address: "Москва, Новокузнецкая 6"},
+            {name: "PIPE", address: "Москва, Трубная 26к1"},
+            {name: "FLY", address: "Москва, Люблинская 78к3"},
+            {name: "ERUDIT", address: "Москва, Ломоносовский пр-кт 25к5"},
+            {name: "CHILLER", address: "Москва, 2-я Звенигородская 16"},
+            {name: "NORTH WEST", address: "Москва, Народного Ополчения 15с5"},
+            {name: "HILLS", address: "Москва, Электролитный проспект с7к3"},
+            {name: "YAKIMANKA", address: "Москва, Большая Якиманка 50"},
+            {name: "ROMA", address: "Москва, Шоссе Энтузиастов 1к2"},
+            {name: "RADIO", address: "Москва, Новоданиловская 8"},
+            {name: "ATRIUM", address: "Москва, Земляной вал 33"},
+            {name: "SUNRISE", address: "Москва, Киевская 2"},
+            {name: "ELEMENT", address: "Москва, Весковский пер. 3"},
+            {name: "DRIVE", address: "Москва, Кронштадтский бул. 6к1"},
+            {name: "GRAMMY", address: "Москва, Варшавское ш. вл. 150б/1"},
+            {name: "SUNDAY", address: "Москва, Авиаторов 1"},
+            {name: "BOVE", address: "Москва, Академика Сахарова 7"},
+            {name: "SRETENKA", address: "Москва, ул. Сретенка 27с1"},
+            {name: "NEO", address: "Москва, Стремянный переулок 2"}
+        ];
+
+        const streetList = document.getElementById('streetList');
+        const checkedCount = document.getElementById('checkedCount');
+        const totalCount = document.getElementById('totalCount');
+        const searchInput = document.getElementById('searchInput');
+        const noResults = document.getElementById('noResults');
+
+        // Генерируем список кофеен
+        function renderList(filter = '') {
+            streetList.innerHTML = '';
+            let visibleCount = 0;
+            
+            streets.forEach(street => {
+                const fullName = `${street.name} X SURF COFFEE®`;
+                const searchString = `${fullName} ${street.address}`.toLowerCase();
+                
+                if (filter && !searchString.includes(filter.toLowerCase())) {
+                    return;
+                }
+                
+                visibleCount++;
+                
+                const li = document.createElement('li');
+                li.className = 'street-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = street.name;
+                checkbox.addEventListener('change', updateSummary);
+                
+                const label = document.createElement('label');
+                label.htmlFor = street.name;
+                label.innerHTML = `
+                    <span class="coffee-icon">☕</span>
+                    <div>
+                        <div class="street-name">${street.name} X SURF COFFEE<sup>®</sup></div>
+                        <div class="street-address">${street.address}</div>
+                    </div>
+                `;
+                
+                li.appendChild(checkbox);
+                li.appendChild(label);
+                streetList.appendChild(li);
+            });
+            
+            // Показываем сообщение, если ничего не найдено
+            noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+            totalCount.textContent = streets.length;
+            updateSummary();
+        }
+
+        // Обновляем статистику
+        function updateSummary() {
+            const checkedItems = document.querySelectorAll('.street-item input:checked');
+            checkedCount.textContent = checkedItems.length;
+            
+            document.querySelectorAll('.street-item').forEach(item => {
+                item.classList.toggle('checked', item.querySelector('input').checked);
+            });
+        }
+
+        // Поиск при вводе текста
+        searchInput.addEventListener('input', (e) => {
+            renderList(e.target.value);
+        });
+
+        // Инициализация
+        renderList();
+              // ===== [1] Загрузка отметок с сервера =====
+        async function loadChecks() {
+          try {
+            const response = await fetch('/load');
+            const checks = await response.json();
+
+            Object.keys(checks).forEach(id => {
+              const checkbox = document.getElementById(id);
+              if (checkbox) {
+                checkbox.checked = checks[id];
+                if (checks[id]) {
+                  checkbox.closest('.street-item').classList.add('checked');
+                }
+              }
+            });
+            updateCounter();
+          } catch (error) {
+            console.error("Ошибка загрузки:", error);
+          }
+        }
+
+        // ===== [2] Сохранение отметок на сервер =====
+        async function saveChecks() {
+          const checkboxes = document.querySelectorAll('.street-item input');
+          const checks = {};
+
+          checkboxes.forEach(checkbox => {
+            checks[checkbox.id] = checkbox.checked;
+          });
+
+          try {
+            await fetch('/save', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(checks)
+            });
+          } catch (error) {
+            console.error("Ошибка сохранения:", error);
+          }
+        }
+
+        // ===== [3] Обновлённый счётчик =====
+        function updateCounter() {
+          const checkedItems = document.querySelectorAll('.street-item input:checked');
+          checkedCount.textContent = checkedItems.length;
+        }
+
+        // ===== [4] Обновлённая функция отметки =====
+        function updateSummary() {
+          document.querySelectorAll('.street-item').forEach(item => {
+            const isChecked = item.querySelector('input').checked;
+            item.classList.toggle('checked', isChecked);
+          });
+          updateCounter();
+          saveChecks(); // Автосохранение при изменении
+        }
+
+        // ===== [5] Инициализация =====
+        document.addEventListener('DOMContentLoaded', () => {
+          // Вызывайте renderList() как обычно, затем:
+          loadChecks();
+
+          // Обновите обработчики чекбоксов
+          document.querySelectorAll('.street-item input').forEach(checkbox => {
+            checkbox.addEventListener('change', updateSummary);
+          });
+        });
+          
+    </script>
+</body>
+</html>
